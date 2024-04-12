@@ -1,12 +1,12 @@
 --
 -- CSC 322 Project 3
 --
--- Name:
--- Vnum:
+-- Name: Sara Subedi, Julia Hoang, Angus Bews
+-- Vnum: ___________, ___________, V00980317
 --
 --
 MODULE main
-  
+
 VAR
   chopsticks : array 0..4 of {nobody,0,1,2,3,4}; -- who holds the chopstick.
   --
@@ -18,7 +18,7 @@ VAR
   p2 : process philosopher(2,chopsticks[2],chopsticks[3]);
   p3 : process philosopher(3,chopsticks[3],chopsticks[4]);
   p4 : process philosopher(4,chopsticks[4],chopsticks[0]);
-  
+
 ASSIGN
   --
   -- Initially, all chopsticks are free
@@ -28,12 +28,12 @@ ASSIGN
   init(chopsticks[2]) := nobody;
   init(chopsticks[3]) := nobody;
   init(chopsticks[4]) := nobody;
-    
+
 MODULE philosopher(i,left,right)
-  
+
 VAR
   state : {thinking, hungry, eating, done};
-  
+
 DEFINE
   --
   -- These are just abbreviations, not state variables
@@ -42,7 +42,7 @@ DEFINE
   gotright := (right=i);
   leftfree := (left=nobody);
   rightfree := (right=nobody);
-    
+
 ASSIGN
   init(state) := thinking;
 
@@ -60,7 +60,7 @@ ASSIGN
     --
     -- if hungry and have left chopstick and right is free, take it
     --
-    (state=hungry) & gotleft & rightfree : i; 
+    (state=hungry) & gotleft & rightfree : i;
     TRUE : right;
   esac;
 
@@ -74,9 +74,13 @@ ASSIGN
   esac;
 
 -- add fairness constraints here
+FAIRNESS running
+FAIRNESS !(state = eating)
 
--- add specifications here 
+-- add specifications here
 
 -- safety:
+SPEC AG((state = eating) -> (gotleft & gotright))
 
 -- liveness:
+SPEC AG((state = hungry) -> AF (state = eating))

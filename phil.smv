@@ -11,8 +11,8 @@ VAR
   chopsticks : array 0..4 of {nobody,0,1,2,3,4}; -- who holds the chopstick.
   permission : {0,1,2,3,4}; -- who is currently allowed to be eating (sequential, only one philosopher allowed at a time)
   --
-  -- Philosopher i has chopstick i on left and chopstick
-  -- (i + 1) mod 5 on right, and they may or may not be currently allowed to eat
+  -- Philosopher i has chopstick i on left and chopstick (i + 1) mod 5 on right
+  -- and they may or may not be currently allowed to eat
   --
   p0 : process philosopher(0,chopsticks[0],chopsticks[1],permission);
   p1 : process philosopher(1,chopsticks[1],chopsticks[2],permission);

@@ -9,15 +9,17 @@ MODULE main
 
 VAR
   chopsticks : array 0..4 of {nobody,0,1,2,3,4}; -- who holds the chopstick.
+  permission : {0,1,2,3,4}; -- who is currently allowed to be eating concurrently
+
   --
   -- Philosopher i has chopstick i on left and chopstick
   -- (i + 1) mod 5 on right
   --
-  p0 : process philosopher(0,chopsticks[0],chopsticks[1]);
-  p1 : process philosopher(1,chopsticks[1],chopsticks[2]);
-  p2 : process philosopher(2,chopsticks[2],chopsticks[3]);
-  p3 : process philosopher(3,chopsticks[3],chopsticks[4]);
-  p4 : process philosopher(4,chopsticks[4],chopsticks[0]);
+  p0 : process philosopher(0,chopsticks[0],chopsticks[1], permission);
+  p1 : process philosopher(1,chopsticks[1],chopsticks[2], permission);
+  p2 : process philosopher(2,chopsticks[2],chopsticks[3], permission);
+  p3 : process philosopher(3,chopsticks[3],chopsticks[4], permission);
+  p4 : process philosopher(4,chopsticks[4],chopsticks[0], permission);
 
 ASSIGN
   --
@@ -28,8 +30,43 @@ ASSIGN
   init(chopsticks[2]) := nobody;
   init(chopsticks[3]) := nobody;
   init(chopsticks[4]) := nobody;
+  init(permission) := 0; -- Philosopher 0 will start with permission to eat
 
-MODULE philosopher(i,left,right)
+-- no strict sequencing
+SPEC EF (p0.state = eating & E [ p0.state = eating U (!(p0.state = eating) & E [ !(p1.state = eating) U p0.state = eating ] ) ] )
+SPEC EF (p0.state = eating & E [ p0.state = eating U (!(p0.state = eating) & E [ !(p2.state = eating) U p0.state = eating ] ) ] )
+SPEC EF (p0.state = eating & E [ p0.state = eating U (!(p0.state = eating) & E [ !(p3.state = eating) U p0.state = eating ] ) ] )
+SPEC EF (p0.state = eating & E [ p0.state = eating U (!(p0.state = eating) & E [ !(p4.state = eating) U p0.state = eating ] ) ] )
+
+SPEC EF (p1.state = eating & E [ p1.state = eating U (!(p1.state = eating) & E [ !(p0.state = eating) U p1.state = eating ] ) ] )
+SPEC EF (p1.state = eating & E [ p1.state = eating U (!(p1.state = eating) & E [ !(p2.state = eating) U p1.state = eating ] ) ] )
+SPEC EF (p1.state = eating & E [ p1.state = eating U (!(p1.state = eating) & E [ !(p3.state = eating) U p1.state = eating ] ) ] )
+SPEC EF (p1.state = eating & E [ p1.state = eating U (!(p1.state = eating) & E [ !(p4.state = eating) U p1.state = eating ] ) ] )
+
+SPEC EF (p2.state = eating & E [ p2.state = eating U (!(p2.state = eating) & E [ !(p0.state = eating) U p2.state = eating ] ) ] )
+SPEC EF (p2.state = eating & E [ p2.state = eating U (!(p2.state = eating) & E [ !(p1.state = eating) U p2.state = eating ] ) ] )
+SPEC EF (p2.state = eating & E [ p2.state = eating U (!(p2.state = eating) & E [ !(p3.state = eating) U p2.state = eating ] ) ] )
+SPEC EF (p2.state = eating & E [ p2.state = eating U (!(p2.state = eating) & E [ !(p4.state = eating) U p2.state = eating ] ) ] )
+
+SPEC EF (p3.state = eating & E [ p3.state = eating U (!(p3.state = eating) & E [ !(p0.state = eating) U p3.state = eating ] ) ] )
+SPEC EF (p3.state = eating & E [ p3.state = eating U (!(p3.state = eating) & E [ !(p1.state = eating) U p3.state = eating ] ) ] )
+SPEC EF (p3.state = eating & E [ p3.state = eating U (!(p3.state = eating) & E [ !(p2.state = eating) U p3.state = eating ] ) ] )
+SPEC EF (p3.state = eating & E [ p3.state = eating U (!(p3.state = eating) & E [ !(p4.state = eating) U p3.state = eating ] ) ] )
+
+SPEC EF (p4.state = eating & E [ p4.state = eating U (!(p4.state = eating) & E [ !(p0.state = eating) U p4.state = eating ] ) ] )
+SPEC EF (p4.state = eating & E [ p4.state = eating U (!(p4.state = eating) & E [ !(p1.state = eating) U p4.state = eating ] ) ] )
+SPEC EF (p4.state = eating & E [ p4.state = eating U (!(p4.state = eating) & E [ !(p2.state = eating) U p4.state = eating ] ) ] )
+SPEC EF (p4.state = eating & E [ p4.state = eating U (!(p4.state = eating) & E [ !(p3.state = eating) U p4.state = eating ] ) ] )
+
+-- 4,0,1,2,3,4
+-- concurrent eating (5%): you can only eat if your neighbours are not eating
+SPEC EF ((p0.state=eating)&(p2.state=eating))
+SPEC EF ((p0.state=eating)&(p3.state=eating))
+SPEC EF ((p1.state=eating)&(p3.state=eating))
+SPEC EF ((p1.state=eating)&(p4.state=eating))
+SPEC EF ((p2.state=eating)&(p4.state=eating))
+
+MODULE philosopher(i,left,right, permission)
 
 VAR
   state : {thinking, hungry, eating, done};
@@ -42,6 +79,7 @@ DEFINE
   gotright := (right=i);
   leftfree := (left=nobody);
   rightfree := (right=nobody);
+  chosen := (permission = i);
 
 ASSIGN
   init(state) := thinking;
@@ -51,7 +89,8 @@ ASSIGN
     --
     -- if hungry and left chopstick if free, take it
     --
-    (state=hungry) & leftfree : i;
+    (state=hungry) & leftfree & (chosen | (permission = (i+2) mod 5 | permission = (i+3) mod 5)): i;
+
     TRUE : left;
   esac;
 
@@ -60,7 +99,7 @@ ASSIGN
     --
     -- if hungry and have left chopstick and right is free, take it
     --
-    (state=hungry) & gotleft & rightfree : i;
+    (state=hungry) & gotleft & rightfree & (chosen | (permission = (i+2) mod 5 | permission = (i+3) mod 5)): i;
     TRUE : right;
   esac;
 
@@ -71,6 +110,12 @@ ASSIGN
     (state=eating) : {eating, done};
     (state=done) : thinking;
     TRUE : state;
+  esac;
+
+  next(permission) := case
+    (state=thinking) & chosen : (i+1) mod 5; -- If philosopher is thinking but has permission, pass it over to the next philosopher
+    (state=done) & chosen : (i+1) mod 5; -- If philosopher finished eating, pass permission to the next philosopher
+    TRUE : permission; -- Otherwise keep it as is
   esac;
 
 -- add fairness constraints here

@@ -78,7 +78,7 @@ ASSIGN
 
   next(permission) := case
     (state=thinking) & chosen : (i+1) mod 5; -- If philosopher is thinking but has permission, pass it over to the next philosopher
-    (state=done) & chosen : (i+1) mod 5; -- If philosopher finished eating and put down their utensils, pass permission to the next philosopher
+    (state=done) & chosen : (i+1) mod 5; -- If philosopher finished eating, pass permission to the next philosopher
     TRUE : permission; -- Otherwise keep it as is
   esac;
 

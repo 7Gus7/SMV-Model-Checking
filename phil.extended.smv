@@ -66,6 +66,12 @@ SPEC !EF ((p2.state=eating)&(p3.state=eating))
 SPEC !EF ((p3.state=eating)&(p4.state=eating))
 SPEC !EF ((p4.state=eating)&(p0.state=eating))
 
+SPEC EF ((p0.state=eating)&(p2.state=eating))
+SPEC EF ((p0.state=eating)&(p3.state=eating))
+SPEC EF ((p1.state=eating)&(p3.state=eating))
+SPEC EF ((p1.state=eating)&(p4.state=eating))
+SPEC EF ((p2.state=eating)&(p4.state=eating))
+
 
 MODULE philosopher(i,left,right, permission)
 
